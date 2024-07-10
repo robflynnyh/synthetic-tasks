@@ -5,7 +5,7 @@ class RotaryPositionalEmbedding(torch.nn.Module): # TODO: incl fused kernel vers
     def __init__(
             self, 
             dim, 
-            base=10000, 
+            base=100000, 
             learned_freq=False,
             rotary_interpolation_factor=1.0,
             precision=torch.bfloat16, 
@@ -79,8 +79,11 @@ class apply_rotary():
         self.sin = sin
         self.q_offset = q_offset
     
+    def __call__(self, q, k): return self.apply(q, k)
     def apply(self, q, k):
-        return apply_rotary_pos_emb(q, k, self.cos, self.sin, self.q_offset)
+        q, k = map(lambda t: rearrange(t, 'b h n d -> b n h d'), (q, k))
+        q, k = apply_rotary_pos_emb(q, k, self.cos, self.sin, self.q_offset)
+        return map(lambda t: rearrange(t, 'b n h d -> b h n d'), (q, k))
 
 class RMSNorm(nn.Module): #https://github.com/bzhangGo/rmsnorm/blob/master/rmsnorm_torch.py
     def __init__(self, d, p=-1., eps=1e-8, bias=False):
@@ -179,11 +182,13 @@ class Model(nn.Module):
             heads,
             n_layers,
     ):
+        super().__init__()
         self.vocab_size, self.d_model, self.heads, self.n_layers = vocab_size, d_model, heads, n_layers
 
         self.embedding = nn.Embedding(vocab_size, d_model)
-        self.out = PreNorm(nn.Linear(d_model, 1))
-        self.pe = RotaryPositionalEmbedding(d_model)
+        self.out = PreNorm(d_model, nn.Linear(d_model, 1))
+     
+        self.pe = RotaryPositionalEmbedding(d_model // heads)
 
         self.layers = nn.ModuleList()
         for _ in range(n_layers):
@@ -192,6 +197,9 @@ class Model(nn.Module):
                 Residual(PreNorm(d_model, Attention(d_model, heads))),
                 
             ]))
+    
+    def total_params(self):
+        return sum(p.numel() for p in self.parameters())
 
     def forward(self, x, mask=None):
         x = self.embedding(x)
@@ -199,4 +207,4 @@ class Model(nn.Module):
 
         for i, (swiglu, attn) in enumerate(self.layers): x = attn(swiglu(x), mask, pos_fn)
 
-        return self.out(x)
+        return self.out(x)  
