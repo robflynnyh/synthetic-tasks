@@ -11,42 +11,61 @@ from tqdm import tqdm
 def load_tokenizer(model_path:str = './tokenizer/tokenizer.model') -> spm.SentencePieceProcessor:
     return spm.SentencePieceProcessor(model_file=model_path)
 
-def train_loop(config, model, optimizer, tokenizer, receive_batch):
+def train_loop(config, model, optimizer, tokenizer, receive_batch, logger=wandb):
     period_id = tokenizer.piece_to_id('.')
     loss = torch.nn.MSELoss()
+    cur_max_len = 2
+    max_max_len = config.data_gen.max_len
     pbar = tqdm(range(config.train.num_steps), total=config.train.num_steps)
     for step in pbar:
         optimizer.zero_grad()
-        text, word_lengths = receive_batch()
+        text, word_lengths, token_lenghts = receive_batch(max_len=cur_max_len)
+
         y_p = model(text.to(model.device))
         # get locations of period id
         p_id_idx = (text == period_id).nonzero(as_tuple=True)[1]
         
         y_p = y_p[0, p_id_idx].squeeze()
-        word_lengths = word_lengths.squeeze().to(model.device)
+        word_lengths = word_lengths.squeeze()
+        shift_by = 2
+        if shift_by > 0:
+            shift_fwd = torch.cat([torch.zeros(shift_by, dtype=torch.long), word_lengths[:-shift_by]])
+            shift_bwd = torch.cat([word_lengths[shift_by:], torch.zeros(shift_by, dtype=torch.long)])
+            word_lengths = (word_lengths + shift_fwd + shift_bwd) 
+        word_lengths = word_lengths.to(model.device)
+        
+        #print((y_p - word_lengths).abs().round())
         loss_val = loss(y_p, word_lengths)
     
         loss_val.backward()
+        torch.nn.utils.clip_grad_norm_(model.parameters(), 1.0)
         optimizer.step()
         
-        accuracy = round((y_p.round() == word_lengths).float().mean().item() * 100, ndigits=2)
+        accuracy = round(((y_p).round() == word_lengths).float().mean().item() * 100, ndigits=2)
+        if accuracy > 95:
+            cur_max_len = min(cur_max_len + 1, max_max_len)
 
-        pbar.set_description(f'Loss: {round(loss_val.item(), ndigits=2)}, Accuracy: {accuracy}')
+        pbar.set_description(f'Loss: {round(loss_val.item(), ndigits=2)}, Accuracy: {accuracy}, Max Len: {cur_max_len}')
+        wandb.log({'loss': loss_val.item(), 'accuracy': accuracy, 'max_len': cur_max_len}) if logger else None
 
-def format_batch(config, generate_batch, tokenizer):
-    sentences = generate_batch()
+def format_batch(config, generate_batch, tokenizer, max_len):
+    sentences = generate_batch(max_len=max_len)
     period_id = tokenizer.piece_to_id('.')
     sentence_lengths = []
+    token_lengths = []
     encoded_sentences = []
     for sentence in sentences:
-        encoded_sentences += tokenizer.encode(sentence['text'])
+        encoded = tokenizer.encode(sentence['text'])
+        encoded_sentences += encoded
         encoded_sentences.append(period_id)
+        token_lengths.append(len(encoded))
         sentence_lengths.append(sentence['len'])
 
     encoded_sentences = torch.tensor(encoded_sentences, dtype=torch.long)[None]
     sentence_lengths = torch.tensor(sentence_lengths, dtype=torch.float32)[None]
+    token_lengths = torch.tensor(token_lengths, dtype=torch.float32)[None]
     
-    return encoded_sentences, sentence_lengths
+    return encoded_sentences, sentence_lengths, token_lengths
 
 def main(config):
     tokenizer = load_tokenizer(config.tokenizer_path)
@@ -67,11 +86,12 @@ def main(config):
         words_list=words_list, 
         batch_size=config.data_gen.sentences_per_example * config.data_gen.examples_per_batch,
         min_len=config.data_gen.min_len,
-        max_len=config.data_gen.max_len
     )
     receive_batch = partial(format_batch, config, generate_batch, tokenizer)
-
-    train_loop(config, model, optimizer, tokenizer, receive_batch)
+    
+    if not args.no_wandb:
+        wandb.init(project='word-count', config=OmegaConf.to_container(config, resolve=True))
+    train_loop(config, model, optimizer, tokenizer, receive_batch, logger=wandb if not args.no_wandb else None)
 
 
 
@@ -79,5 +99,6 @@ def main(config):
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument('--config', type=str, default='settings.yaml')
+    parser.add_argument('--no_wandb', action='store_true')
     args = parser.parse_args()  
     main(OmegaConf.load(args.config))

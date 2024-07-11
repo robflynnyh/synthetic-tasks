@@ -7,7 +7,7 @@ model:
 
 data_gen:
   min_len: 1
-  max_len: 20
+  max_len: 30
   sentences_per_example: 100
   examples_per_batch: 1
 
@@ -15,7 +15,7 @@ tokenizer_path: ./tokenizer/tokenizer.model
 
 train:
   checkpoint_folder: "checkpoints"
-  num_steps: 1000
+  num_steps: 1000000
 
 optim:
-  lr: 1e-3
+  lr: 5.5e-4
