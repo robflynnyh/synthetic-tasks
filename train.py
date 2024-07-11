@@ -42,7 +42,7 @@ def train_loop(config, model, optimizer, tokenizer, receive_batch, logger=wandb)
         optimizer.step()
         
         accuracy = round(((y_p).round() == word_lengths).float().mean().item() * 100, ndigits=2)
-        if accuracy > 95:
+        if accuracy > 99:
             cur_max_len = min(cur_max_len + 1, max_max_len)
 
         pbar.set_description(f'Loss: {round(loss_val.item(), ndigits=2)}, Accuracy: {accuracy}, Max Len: {cur_max_len}')

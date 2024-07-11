@@ -15,7 +15,7 @@ tokenizer_path: ./tokenizer/tokenizer.model
 
 train:
   checkpoint_folder: "checkpoints"
-  num_steps: 1000000
+  num_steps: 5000000
 
 optim:
   lr: 5.5e-4
