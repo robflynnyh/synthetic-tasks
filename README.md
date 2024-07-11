@@ -1,4 +1,5 @@
-# word-counting-task
+# Tasks:
+## word-counting-task
 
 Simple synthetic task to test bidirectional sequence models!
 
