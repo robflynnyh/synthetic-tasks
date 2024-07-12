@@ -2,7 +2,7 @@
 - Navigate to any of the tasks folders to run a task via train.py
 
 # Tasks:
-## words-in-location-counting-task
+## words-in-sentence-counting-task
 
 Simple synthetic task to test bidirectional sequence models!
 
