@@ -1,0 +1,21 @@
+
+
+model:
+  d_model: 256
+  heads: 4
+  n_layers: 6
+
+data_gen:
+  min_len: 1
+  max_len: 30
+  sentences_per_example: 100
+  examples_per_batch: 1
+
+#tokenizer_path: ./tokenizer/tokenizer.model
+
+train:
+  checkpoint_folder: "checkpoints"
+  num_steps: 5000000
+
+optim:
+  lr: 5.5e-4

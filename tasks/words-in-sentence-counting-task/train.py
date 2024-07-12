@@ -3,17 +3,13 @@ import argparse
 import sys
 
 from synthetic_tasks.modelling.transformer import Model
-from synthetic_tasks.tooling.misc import get_relative_path
+from synthetic_tasks.tooling.misc import global_main
 import wandb
 import torch
-import sentencepiece as spm
 import data_gen
 from functools import partial
 from tqdm import tqdm
 
-
-def load_tokenizer(model_path:str = get_relative_path('../tokenizer/tokenizer.model')) -> spm.SentencePieceProcessor:
-    return spm.SentencePieceProcessor(model_file=model_path)
 
 def train_loop(config, model, optimizer, tokenizer, receive_batch, logger=wandb):
     period_id = tokenizer.piece_to_id('.')
@@ -52,7 +48,7 @@ def train_loop(config, model, optimizer, tokenizer, receive_batch, logger=wandb)
             cur_max_len = min(cur_max_len + 1, max_max_len)
 
         pbar.set_description(f'Loss: {round(loss_val.item(), ndigits=2)}, Accuracy: {accuracy}, Max Len: {cur_max_len}')
-        wandb.log({'loss': loss_val.item(), 'accuracy': accuracy, 'max_len': cur_max_len}) if logger else None
+        logger.log({'loss': loss_val.item(), 'accuracy': accuracy, 'max_len': cur_max_len}) if logger else None
 
 def format_batch(config, generate_batch, tokenizer, max_len):
     sentences = generate_batch(max_len=max_len)
@@ -74,16 +70,7 @@ def format_batch(config, generate_batch, tokenizer, max_len):
     return encoded_sentences, sentence_lengths, token_lengths
 
 def main(config):
-    tokenizer = load_tokenizer()
-    device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-    
-    model = Model(vocab_size = tokenizer.get_piece_size(), **config.model)
-    model.to(device)
-    model.train()
-    model.device = device
-
-    print(f'Total Parameters (M): {model.total_params() / 1e6}')
-    optimizer = torch.optim.AdamW(model.parameters(), **config.optim)
+    model, optimizer, tokenizer = global_main(config, model_class = Model)
     
     assert config.data_gen.examples_per_batch == 1, 'Only 1 example per batch is supported (for now) to avoid padding'
     words_list = data_gen.load_words()
