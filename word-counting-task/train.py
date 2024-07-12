@@ -1,7 +1,9 @@
 from omegaconf import OmegaConf
 import argparse
-from ..modelling.transformer import Model
-from ..tooling.misc import get_relative_path
+import sys
+
+from synthetic_tasks.modelling.transformer import Model
+from synthetic_tasks.tooling.misc import get_relative_path
 import wandb
 import torch
 import sentencepiece as spm
@@ -72,7 +74,7 @@ def format_batch(config, generate_batch, tokenizer, max_len):
     return encoded_sentences, sentence_lengths, token_lengths
 
 def main(config):
-    tokenizer = load_tokenizer(config.tokenizer_path)
+    tokenizer = load_tokenizer()
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
     
     model = Model(vocab_size = tokenizer.get_piece_size(), **config.model)

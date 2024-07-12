@@ -1,0 +1,4 @@
+include synthetic_tasks/artifacts/words_alpha.txt
+include synthetic_tasks/tokenizer/tokenizer.model
+
+

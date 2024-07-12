@@ -1,7 +1,7 @@
 import torch, torch.nn as nn
 from einops import rearrange
-from pos_enc import RotaryPositionalEmbedding, apply_rotary
-from norm import RMSNorm
+from synthetic_tasks.modelling.pos_enc import RotaryPositionalEmbedding, apply_rotary
+from synthetic_tasks.modelling.norm import RMSNorm
 
 class Attention(nn.Module):
     def __init__(self, d_model, heads):

@@ -2,3 +2,4 @@ checkpoints/
 *.pt
 wandb/
 __pycache__/
+*.egg-info/

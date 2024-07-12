@@ -1,6 +1,7 @@
 import random
+from synthetic_tasks.tooling.misc import get_relative_path
 
-def load_words(path='./words_alpha.txt'): # each line is a word taken from: https://raw.githubusercontent.com/dwyl/english-words/master/words_alpha.txt
+def load_words(path=get_relative_path('../artifacts/words_alpha.txt')): # each line is a word taken from: https://raw.githubusercontent.com/dwyl/english-words/master/words_alpha.txt
     with open(path, 'r') as f:
         words = f.read().split('\n')
     return [el.strip() for el in words if el.strip() != '']

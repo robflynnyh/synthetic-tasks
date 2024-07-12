@@ -11,7 +11,7 @@ data_gen:
   sentences_per_example: 100
   examples_per_batch: 1
 
-tokenizer_path: ./tokenizer/tokenizer.model
+#tokenizer_path: ./tokenizer/tokenizer.model
 
 train:
   checkpoint_folder: "checkpoints"
