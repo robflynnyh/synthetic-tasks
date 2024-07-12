@@ -9,6 +9,9 @@ import data_gen
 from functools import partial
 from tqdm import tqdm
 
+start_word_token = '▁'
+
+
 
 def train_loop(config, model, optimizer, tokenizer, receive_batch, logger=wandb):
     period_id = tokenizer.piece_to_id('.')
@@ -55,12 +58,31 @@ def format_batch(config, generate_batch, tokenizer, max_len):
     sentence_lengths = []
     token_lengths = []
     encoded_sentences = []
+    offset = 0
+
+    words_in_sentences = {}
     for sentence in sentences:
         encoded = tokenizer.encode(sentence['text'])
+        words = sentence['text'].split()
+        as_pieces = tokenizer.encode_as_pieces(sentence['text'])
+        word_positions = {}
+        
+        words_in_sentence = set(words)
+        for word in words_in_sentence:
+            if word not in words_in_sentences: words_in_sentences[word] = 0
+            words_in_sentences[word] += 1
+        
+        cur_word_i = -1
+        for idx, piece in enumerate(as_pieces):
+            if piece.startswith(start_word_token): cur_word_i += 1
+            if words[cur_word_i] not in word_positions: word_positions[words[cur_word_i]] = []
+            word_positions[words[cur_word_i]].append(idx + offset)
+
         encoded_sentences += encoded
         encoded_sentences.append(period_id)
         token_lengths.append(len(encoded))
         sentence_lengths.append(sentence['len'])
+        offset += len(encoded) + 1
 
     encoded_sentences = torch.tensor(encoded_sentences, dtype=torch.long)[None]
     sentence_lengths = torch.tensor(sentence_lengths, dtype=torch.float32)[None]
@@ -69,6 +91,7 @@ def format_batch(config, generate_batch, tokenizer, max_len):
     return encoded_sentences, sentence_lengths, token_lengths
 
 def main(config):
+    raise NotImplementedError('This code is not working yet')
     model, optimizer, tokenizer = global_main(config, model_class = Model)
     
     assert config.data_gen.examples_per_batch == 1, 'Only 1 example per batch is supported (for now) to avoid padding'
