@@ -1,3 +1,6 @@
+- install via `pip install -e .` after cloning and navigating to the repo's main directory
+- Navigate to any of the tasks folders to run a task via train.py
+
 # Tasks:
 ## words-in-location-counting-task
 
