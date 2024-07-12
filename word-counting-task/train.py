@@ -1,6 +1,7 @@
 from omegaconf import OmegaConf
 import argparse
-from transformer import Model
+from ..modelling.transformer import Model
+from ..tooling.misc import get_relative_path
 import wandb
 import torch
 import sentencepiece as spm
@@ -8,14 +9,17 @@ import data_gen
 from functools import partial
 from tqdm import tqdm
 
-def load_tokenizer(model_path:str = './tokenizer/tokenizer.model') -> spm.SentencePieceProcessor:
+
+def load_tokenizer(model_path:str = get_relative_path('../tokenizer/tokenizer.model')) -> spm.SentencePieceProcessor:
     return spm.SentencePieceProcessor(model_file=model_path)
 
 def train_loop(config, model, optimizer, tokenizer, receive_batch, logger=wandb):
     period_id = tokenizer.piece_to_id('.')
     loss = torch.nn.MSELoss()
+    shift_by = 2
     cur_max_len = 2
     max_max_len = config.data_gen.max_len
+    
     pbar = tqdm(range(config.train.num_steps), total=config.train.num_steps)
     for step in pbar:
         optimizer.zero_grad()
@@ -27,14 +31,14 @@ def train_loop(config, model, optimizer, tokenizer, receive_batch, logger=wandb)
         
         y_p = y_p[0, p_id_idx].squeeze()
         word_lengths = word_lengths.squeeze()
-        shift_by = 2
+        
         if shift_by > 0:
             shift_fwd = torch.cat([torch.zeros(shift_by, dtype=torch.long), word_lengths[:-shift_by]])
             shift_bwd = torch.cat([word_lengths[shift_by:], torch.zeros(shift_by, dtype=torch.long)])
             word_lengths = (word_lengths + shift_fwd + shift_bwd) 
+
         word_lengths = word_lengths.to(model.device)
         
-        #print((y_p - word_lengths).abs().round())
         loss_val = loss(y_p, word_lengths)
     
         loss_val.backward()
