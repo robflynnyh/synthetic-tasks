@@ -43,14 +43,14 @@ def format_batch(config, generate_batch, tokenizer, word_scores_dict, token_scor
 
     # Assign scores to tokens
     pieces = tokenizer.encode_as_pieces(sentence['text'])
-    token_scores = [token_scores_dict[token] for token in pieces]
+    token_scores = [token_scores_dict['forward'][token] for token in pieces]
     token_scores = torch.tensor(token_scores)[None]
     culm_token_scores = torch.cumsum(token_scores, dim=1)
 
     # assign scores to words
     
     words = sentence['text'].split()
-    word_scores = [word_scores_dict[word] for word in words]
+    word_scores = [word_scores_dict['forward'][word] for word in words]
     culm_word_score = []
     cur_idx = -2
     for i, piece in enumerate(pieces):
@@ -71,7 +71,7 @@ def format_batch(config, generate_batch, tokenizer, word_scores_dict, token_scor
 
 def assign_word_scores(word_list, random_seed=1234, min_score=-5, max_score=5): 
     random.seed(random_seed)
-    return {word: random.randint(min_score, max_score) for word in word_list}
+    return {'forward': {word: random.randint(min_score, max_score) for word in word_list}}
 
 def assign_token_scores(tokenizer, random_seed=1234, min_score=-5, max_score=5):
     tokens = [tokenizer.id_to_piece(i) for i in range(tokenizer.get_piece_size())]

@@ -14,9 +14,26 @@ Given a sequence of sentences S \ni {s_0, ..., s_n} count the total number of wo
 ## word-occurrence-task
 
 decription:
+
 Given a sequence of sentences S \ni {s_0, ..., s_n}, where a given sentence s_i is made up of a random sequence of words of varying length, for each word in the sentence predict the number of other sentences in S that contain the word.
 
 ## score-tracker-task
 
 decription:
+
 Input to the model is a sequence of words W \ni {w_0, ..., w_n}, each word is randomly sampled from a vocabulary, each word in the vocabulary is assigned an integer score in the range {-5, 5}, each word is composed up of tokens, each token is also assigned a score in the range {-5, 5}. The model is then trained to output the culmalitive score of all previous tokens and words aswell as the score for the current token. 
+
+## score-transmitter
+
+(Not implemented yet)
+
+decription:
+
+this task has two settings: reccurent and parallel
+
+### reccurent:
+Given a sequence of words W \ni {w_0, ..., w_n}, each word is randomly sampled from a vocabulary, each word in the vocabulary is assigned an integer score in the range {-5, 5}, each word is composed up of tokens, each token is also assigned a score in the range {-n, n}.
+The model is trained to predict a final score for each token. This is produced by taking the score for the word at token index t and adding to the score of the token at index t + token_scores[token_index], this is performed starting at token index 0 and ending at token index n.
+
+### parallel:
+Same as above except all of the addition operations are performed at once, rather than starting at token zero and ending at token n.

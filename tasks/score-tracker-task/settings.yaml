@@ -12,6 +12,7 @@ data_gen:
   examples_per_batch: 1
 
 #tokenizer_path: ./tokenizer/tokenizer.model
+task_mode: "causal" # "causal" | "bidirectional"
 
 train:
   checkpoint_folder: "checkpoints"
