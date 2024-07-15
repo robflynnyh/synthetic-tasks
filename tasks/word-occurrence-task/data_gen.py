@@ -1,10 +1,12 @@
 import random
 from synthetic_tasks.tooling.misc import get_relative_path
 
-def load_words(path=get_relative_path('../artifacts/words_alpha.txt')): # each line is a word taken from: https://raw.githubusercontent.com/dwyl/english-words/master/words_alpha.txt
+def load_words(path=get_relative_path('../artifacts/words_alpha.txt'), random_k=128, seed=12351): # each line is a word taken from: https://raw.githubusercontent.com/dwyl/english-words/master/words_alpha.txt
     with open(path, 'r') as f:
         words = f.read().split('\n')
-    return [el.strip() for el in words if el.strip() != '']
+    words_list = [el.strip() for el in words if el.strip() != '']
+    random.seed(seed)
+    return random.choices(words_list, k=random_k)
 
 
 def generate_random_text(words_list, min_len=1, max_len=10):
