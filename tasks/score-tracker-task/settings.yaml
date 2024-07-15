@@ -8,7 +8,7 @@ model:
 data_gen:
   min_len: 1
   max_len: 100
-  sentences_per_example: 1000
+  sentences_per_example: 1
   examples_per_batch: 1
 
 #tokenizer_path: ./tokenizer/tokenizer.model

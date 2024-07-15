@@ -18,7 +18,5 @@ Given a sequence of sentences S \ni {s_0, ..., s_n}, where a given sentence s_i 
 
 ## score-tracker-task
 
-(still implementing)
-
 decription:
 Input to the model is a sequence of words W \ni {w_0, ..., w_n}, each word is randomly sampled from a vocabulary, each word in the vocabulary is assigned an integer score in the range {-5, 5}, each word is composed up of tokens, each token is also assigned a score in the range {-5, 5}. The model is then trained to output the culmalitive score of all previous tokens and words aswell as the score for the current token. 
