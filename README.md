@@ -13,7 +13,5 @@ Given a sequence of sentences S \ni {s_0, ..., s_n} count the total number of wo
 
 ## word-occurrence-task
 
-Not yet implemented!
-
 decription:
 Given a sequence of sentences S \ni {s_0, ..., s_n}, where a given sentence s_i is made up of a random sequence of words of varying length, for each word in the sentence predict the number of other sentences in S that contain the word.
