@@ -2,12 +2,13 @@ from omegaconf import OmegaConf
 import argparse
 import sys
 from synthetic_tasks.modelling.transformer import Model
-from synthetic_tasks.tooling.misc import global_main
+from synthetic_tasks.tooling.misc import global_main, init_wandb
 import wandb
 import torch
 import data_gen
 from functools import partial
 from tqdm import tqdm
+import random
 
 start_word_token = '▁'
 
@@ -19,6 +20,7 @@ def train_loop(config, model, optimizer, tokenizer, receive_batch, logger=wandb)
     shift_by = 2
     max_sentences_per_example = config.data_gen.sentences_per_example
     cur_sentences_per_example = 1
+    
 
     pbar = tqdm(range(config.train.num_steps), total=config.train.num_steps)
     for step in pbar:
@@ -84,7 +86,7 @@ def format_batch(config, generate_batch, tokenizer, batch_size):
         for word_key in word_positions.keys():
             for pos in word_positions[word_key]:
                 targets[0, pos] = words_in_sentences[word_key] - 1
-               
+    
     
 
     return encoded_sentences, targets, token_lengths
@@ -102,9 +104,9 @@ def main(config):
         max_len = config.data_gen.max_len,
     )
     receive_batch = partial(format_batch, config, generate_batch, tokenizer)
-    
-    if not args.no_wandb:
-        wandb.init(project='word-occurrrence', config=OmegaConf.to_container(config, resolve=True))
+
+    init_wandb(args, config, project_name = 'word-occurrrence')
+
     train_loop(config, model, optimizer, tokenizer, receive_batch, logger=wandb if not args.no_wandb else None)
 
 

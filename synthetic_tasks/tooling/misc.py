@@ -1,6 +1,8 @@
 import os
 import torch
 import sentencepiece as spm
+import wandb
+from omegaconf import OmegaConf
 
 def get_relative_path(path): #get relative path from current file
     return os.path.join(os.path.dirname(__file__), path)
@@ -20,3 +22,11 @@ def global_main(config, model_class):
     print(f'Total Parameters (M): {model.total_params() / 1e6}')
     optimizer = torch.optim.AdamW(model.parameters(), **config.optim)
     return model, optimizer, tokenizer
+
+def init_wandb(args, config, project_name):
+    if not args.no_wandb:
+        wandb.init(
+            project=project_name, 
+            config=OmegaConf.to_container(config, resolve=True),
+            dir="./" if (config.get('wandb', {}).get('log_dir', None) is None) else config.wandb.log_dir
+        )

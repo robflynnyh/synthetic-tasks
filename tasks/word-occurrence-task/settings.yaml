@@ -7,15 +7,18 @@ model:
 
 data_gen:
   min_len: 1
-  max_len: 100
+  max_len: 50
   sentences_per_example: 1000
   examples_per_batch: 1
 
 #tokenizer_path: ./tokenizer/tokenizer.model
 
+wandb:
+  log_dir: /store/store5/data/tmp/wandb/word-occurrence
+
 train:
   checkpoint_folder: "checkpoints"
-  num_steps: 5000000
+  num_steps: 50000000
 
 optim:
-  lr: 1e-4
+  lr: 3e-4

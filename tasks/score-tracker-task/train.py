@@ -2,7 +2,7 @@ from omegaconf import OmegaConf
 import argparse
 import sys
 from synthetic_tasks.modelling.transformer import Model
-from synthetic_tasks.tooling.misc import global_main
+from synthetic_tasks.tooling.misc import global_main, init_wandb
 import wandb
 import torch
 import data_gen
@@ -17,10 +17,14 @@ start_word_token = '▁'
 def train_loop(config, model, optimizer, tokenizer, receive_batch, logger=wandb):
     loss = torch.nn.MSELoss()
 
+    cur_max_len = 2
+    max_len = config.data_gen.max_len
+    inital_lr = 5e-6
+
     pbar = tqdm(range(config.train.num_steps), total=config.train.num_steps)
     for step in pbar:
         optimizer.zero_grad()
-        text, culm_scores = receive_batch(max_len = config.data_gen.max_len)
+        text, culm_scores = receive_batch(max_len = cur_max_len)
         text, culm_scores = text.to(model.device), culm_scores.to(model.device)
         y_p = model(text).squeeze(2)
         loss_val = loss(y_p, culm_scores)
@@ -30,9 +34,16 @@ def train_loop(config, model, optimizer, tokenizer, receive_batch, logger=wandb)
         optimizer.step()
 
         accuracy = round(((y_p).round() == culm_scores).float().mean().item() * 100, ndigits=2)
+        if accuracy > 99:
+            cur_max_len = min(cur_max_len + 1, max_len)
+            optimizer.param_groups[0]['lr'] = min(config.optim.lr, optimizer.param_groups[0]['lr'] * 2)
+
+        elif accuracy < 90:
+            cur_max_len = max(cur_max_len - 1, 2)
+            optimizer.param_groups[0]['lr'] = max(inital_lr, optimizer.param_groups[0]['lr'] / 2)
 
         pbar.set_description(f'Loss: {round(loss_val.item(), ndigits=2)}, Accuracy: {accuracy}')
-        logger.log({'loss': loss_val.item(), 'accuracy': accuracy}) if logger else None
+        logger.log({'loss': loss_val.item(), 'accuracy': accuracy, 'max_len': cur_max_len, 'lr': optimizer.param_groups[0]['lr']}) if logger else None
 
        
         
@@ -92,9 +103,8 @@ def main(config):
         batch_size = 1,
     )
     receive_batch = partial(format_batch, config, generate_batch, tokenizer, word_scores_dict, token_scores_dict)
-    
-    if not args.no_wandb:
-        wandb.init(project='score-tracker', config=OmegaConf.to_container(config, resolve=True))
+
+    init_wandb(args, config, project_name = 'score-tracker')
     train_loop(config, model, optimizer, tokenizer, receive_batch, logger=wandb if not args.no_wandb else None)
 
 

@@ -7,16 +7,19 @@ model:
 
 data_gen:
   min_len: 1
-  max_len: 100
+  max_len: 10000
   sentences_per_example: 1
   examples_per_batch: 1
 
 #tokenizer_path: ./tokenizer/tokenizer.model
 task_mode: "causal" # "causal" | "bidirectional"
 
+wandb:
+  log_dir: /store/store5/data/tmp/wandb/score-tracker
+
 train:
   checkpoint_folder: "checkpoints"
   num_steps: 5000000
 
 optim:
-  lr: 1e-4
+  lr: 7e-4
